@@ -1,0 +1,5 @@
+curl -O http://yum.puppet.com/puppet-release-el-7.noarch.rpm
+rpm -i puppet-release-el-7.noarch.rpm
+dnf install -y puppet-agent
+systemctl disable puppet
+rm -f puppet-release-el-7.noarch.rpm

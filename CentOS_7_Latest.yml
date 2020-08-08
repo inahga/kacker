@@ -1,5 +1,5 @@
 sensitive-variables:
-  - "vsphere-password"
+- "vsphere-password"
 
 variables:
   kickstart: "{{env `KICKSTART`}}"
@@ -12,37 +12,37 @@ variables:
   disk_size: "16384"
 
 builders:
-  - type: "vsphere-iso"
-    convert_to_template: "true"
-    vcenter_server: "{{user `server`}}"
-    username: "{{user `vsphere-user`}}"
-    password: "{{user `vsphere-password`}}"
-    insecure_connection: "true"
+- type: "vsphere-iso"
+  convert_to_template: "true"
+  vcenter_server: "{{user `server`}}"
+  username: "{{user `vsphere-user`}}"
+  password: "{{user `vsphere-password`}}"
+  insecure_connection: "true"
 
-    vm_name: "{{user `vm_name`}}"
-    folder: "PackerTemplates"
-    host: "{{user `host`}}"
-    datastore: "{{user `datastore`}}"
-    network: "DPG-10-Public"
+  vm_name: "{{user `vm_name`}}"
+  folder: "PackerTemplates"
+  host: "{{user `host`}}"
+  datastore: "{{user `datastore`}}"
+  network: "DPG-10-Public"
 
-    notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
-    guest_os_type: "centos7_64guest"
+  notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
+  guest_os_type: "centos7_64guest"
 
-    ssh_username: "root"
-    ssh_password: "password"
+  ssh_username: "root"
+  ssh_password: "password"
 
-    CPUs: "{{user `CPUs`}}"
-    RAM: "{{user `RAM`}}"
-    disk_size: "{{user `disk_size`}}"
-    disk_thin_provisioned: "true"
-    disk_controller_type: "pvscsi"
-    network_card: "vmxnet3"
+  CPUs: "{{user `CPUs`}}"
+  RAM: "{{user `RAM`}}"
+  disk_size: "{{user `disk_size`}}"
+  disk_thin_provisioned: "true"
+  disk_controller_type: "pvscsi"
+  network_card: "vmxnet3"
 
-    iso_urls: "http://bay.uchicago.edu/centos/7.8.2003/isos/x86_64/CentOS-7-x86_64-NetInstall-2003.iso"
-    iso_checksum: "101bc813d2af9ccf534d112cbe8670e6d900425b297d1a4d2529c5ad5f226372"
+  iso_urls: "http://bay.uchicago.edu/centos/7.8.2003/isos/x86_64/CentOS-7-x86_64-NetInstall-2003.iso"
+  iso_checksum: "101bc813d2af9ccf534d112cbe8670e6d900425b297d1a4d2529c5ad5f226372"
 
-    http_directory: "http"
-    
-    boot_command:
-      - "<esc><wait>"
-      - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `kickstart`}}<enter>"
+  http_directory: "./"
+
+  boot_command:
+  - "<esc><wait>"
+  - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `kickstart`}}<enter>"

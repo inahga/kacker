@@ -1,8 +1,8 @@
 sensitive-variables:
-  - "vsphere-password"
+- "vsphere-password"
 
 variables:
-  kickstart: "CentOS_8_BackupRepo_ks.cfg"
+  kickstart: "{{env `KICKSTART`}}"
   server: "vcsa0.vsphere.inahga.org"
   vm_name: "Packer_CentOS_8_BackupRepo"
   host: "esxi2.vsphere.inahga.org"
@@ -13,42 +13,42 @@ variables:
   disk2_size: "1048576"
 
 builders:
-  - type: "vsphere-iso"
-    convert_to_template: "true"
-    vcenter_server: "{{user `server`}}"
-    username: "{{user `vsphere-user`}}"
-    password: "{{user `vsphere-password`}}"
-    insecure_connection: "true"
+- type: "vsphere-iso"
+  convert_to_template: "true"
+  vcenter_server: "{{user `server`}}"
+  username: "{{user `vsphere-user`}}"
+  password: "{{user `vsphere-password`}}"
+  insecure_connection: "true"
 
-    vm_name: "{{user `vm_name`}}"
-    folder: "PackerTemplates"
-    host: "{{user `host`}}"
-    datastore: "{{user `datastore`}}"
-    network: "DPG-10-Public"
+  vm_name: "{{user `vm_name`}}"
+  folder: "PackerTemplates"
+  host: "{{user `host`}}"
+  datastore: "{{user `datastore`}}"
+  network: "DPG-10-Public"
 
-    notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
-    guest_os_type: "centos8_64guest"
+  notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
+  guest_os_type: "centos8_64guest"
 
-    ssh_username: "root"
-    ssh_password: "password"
+  ssh_username: "root"
+  ssh_password: "password"
 
-    CPUs: "{{user `CPUs`}}"
-    RAM: "{{user `RAM`}}"
+  CPUs: "{{user `CPUs`}}"
+  RAM: "{{user `RAM`}}"
 
-    storage:
-      - disk_size: "{{user `disk1_size`}}"
-        disk_thin_provisioned: "true"
-      - disk_size: "{{user `disk2_size`}}"
-        disk_thin_provisioned: "true"
-    disk_controller_type: "pvscsi"
+  storage:
+  - disk_size: "{{user `disk1_size`}}"
+    disk_thin_provisioned: "true"
+  - disk_size: "{{user `disk2_size`}}"
+    disk_thin_provisioned: "true"
+  disk_controller_type: "pvscsi"
 
-    network_card: "vmxnet3"
+  network_card: "vmxnet3"
 
-    iso_urls: "http://bay.uchicago.edu/centos/8.1.1911/isos/x86_64/CentOS-8.1.1911-x86_64-boot.iso"
-    iso_checksum: "7fea13202bf2f26989df4175aace8fdc16e1137f7961c33512cbfad844008948"
+  iso_urls: "http://bay.uchicago.edu/centos/8.2.2004/isos/x86_64/CentOS-8.2.2004-x86_64-boot.iso"
+  iso_checksum: "c67876a5602faa17f68b40ccf2628799b87454aa67700f0f57eec15c6ccdd98c"
 
-    http_directory: "http"
-    
-    boot_command:
-      - "<esc><wait>"
-      - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `kickstart`}}<enter>"
+  http_directory: "./"
+
+  boot_command:
+  - "<esc><wait>"
+  - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `kickstart`}}<enter>"
