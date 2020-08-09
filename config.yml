@@ -1,0 +1,5 @@
+---
+customizationPath: ./customization
+fragmentsPath: ./fragments
+kickstartPath: ./kickstart
+packerfilePath: ./packer
