@@ -1,8 +1,8 @@
-url --url={{ netinst_url|default('"http://bay.uchicago.edu/centos/8.2.2004/BaseOS/x86_64/os/"') }}
+url --url={{ netinst_url }}
 rootpw {{ rootpw|default('password') }}
 
 network --activate --ipv6=auto --bootproto=dhcp --device=ens192
-network --hostname={{ hostname|default('Packer-CentOS8') }}
+network --hostname={{ hostname|default('CentOS8') }}
 
 {% block diskconf %}
 autopart --type=lvm --nohome
@@ -34,6 +34,15 @@ perl
 {% endblock %}
 
 %post --log=/root/ks-post.log
+{% block userconf %}
+useradd -m {{ username|'centos' }}
+mkdir -f '/home/{{ username|'centos' }}/.ssh'
+touch '/home/{{ username|'centos' }}/.ssh/authorized_keys'
+{% for key in deploy_keys %}
+echo {{ key }} '/home/{{ username|'centos' }}/.ssh/authorized_keys'
+{% endfor %}
+{% endblock %}
+
 {% for scr in scripts %}
 {{ src }}
 {% endfor %}

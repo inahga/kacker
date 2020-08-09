@@ -1,0 +1,49 @@
+---
+sensitive-variables:
+  - "vsphere-password"
+
+builders:
+  - type: "vsphere-iso"
+    convert_to_template: "true"
+    vcenter_server: "vcsa0.vsphere.inahga.org"
+    username: "{{user `vsphere-user`}}"
+    password: "{{user `vsphere-password`}}"
+    insecure_connection: "true"
+
+    vm_name: "vSphere Template"
+    folder: "PackerTemplates"
+    host: "esxi2.vsphere.inahga.org"
+    datastore: "esxi2-Local"
+    network: "DPG-10-Public"
+
+    notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
+    guest_os_type: ""
+
+    ssh_username: "root"
+    ssh_password: "password"
+
+    CPUs: "2"
+    RAM: "2048"
+
+    storage:
+      - disk_size: "16384"
+        disk_thin_provisioned: "true"
+    disk_controller_type: "pvscsi"
+
+    network_card: "vmxnet3"
+
+    iso_urls: ""
+    iso_checksum: ""
+
+    http_directory: "./"
+
+    boot_command:
+      - "<esc><wait>"
+      - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{env `KICKSTART`}}<enter>"
+
+provisioners:
+  - type: shell
+    inline:
+      - passwd -d root
+      - usermod -L root
+      - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config 
