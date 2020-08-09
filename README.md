@@ -1,3 +1,8 @@
+# Kacker
+This project seeks to reduce the ridiculous amount of repetition when using Packer to build images. Right now, it's targeted towards resolving RHEL kickstart files, but should be extensible enough to handle other config types (even Windows unattend.xml).
+
+
+### Old documentation 
 Using this repo involves the following command:
 
 ```
