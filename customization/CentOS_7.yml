@@ -1,6 +1,8 @@
 ---
 kickstart:
-  from: CentOS_7.cfg.tpl
+  from: 
+    - CentOS_7.cfg.tmpl
+    - CentOS_8.cfg.tmpl
   variables:
     - name: netinst_url
       value: http://bay.uchicago.edu/centos/7.8.2003/os/x86_64/

@@ -1,0 +1,16 @@
+{{ template "centos" . }}
+{{ define "authconfig" }}
+auth --enableshadow --passalgo=sha512
+{{ end }}
+
+{{ define "packages }}
+%packages
+@^minimal
+@core
+perl
+{{ range .GetOptionalArray("packages") }} 
+{{ . }}
+{{ end }}
+%end
+{{ end }}
+{{ end }}

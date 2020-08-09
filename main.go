@@ -6,7 +6,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/mikefarah/yq/v3/pkg/yqlib"
+	kacker "gitlab.inahga.org/aghani/kacker/internal"
+
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,39 +18,10 @@ import (
 
 // Config stores the various paths needed for operation
 type Config struct {
-	CustomizationPath string `yaml:customizationPath`
-	FragmentsPath     string `yaml:fragmentsPath`
-	KickstartPath     string `yaml:kickstartPath`
-	PackerfilePath    string `yaml:packerfilePath`
-}
-
-// Variable represents a template variable that will be provided to the kickstart
-// template.
-type Variable struct {
-	Name      string   `yaml:"name"`
-	Value     string   `yaml:"value"`
-	URL       string   `yaml:"url"`
-	Fragments []string `yaml:"fragments"`
-}
-
-// KickstartCustomization collects the kickstart template file and any variable substitutions.
-type KickstartCustomization struct {
-	From      string     `yaml:"from"`
-	Variables []Variable `yaml:"variables"`
-}
-
-// PackerCustomization collects the packer file and any YAML substitutions that
-// need to be made.
-type PackerCustomization struct {
-	From  string      `yaml:"from"`
-	Merge interface{} `yaml:"merge"`
-}
-
-// Customization represents the customization file: modifiers for the kickstart
-// file and the packer file.
-type Customization struct {
-	Kickstart KickstartCustomization `yaml:"kickstart"`
-	Packer    PackerCustomization    `yaml:"packer"`
+	CustomizationPath string `yaml:"customizationPath"`
+	FragmentsPath     string `yaml:"fragmentsPath"`
+	KickstartPath     string `yaml:"kickstartPath"`
+	PackerfilePath    string `yaml:"packerfilePath"`
 }
 
 func main() {
@@ -58,13 +30,11 @@ func main() {
 		log.Fatalln("Could not read customization file")
 	}
 
-	var cust Customization
+	var cust kacker.Customization
 	err = yaml.Unmarshal(f, &cust)
 	if err != nil {
 		log.Fatalln("Invalid customization file")
 	}
-
-	yqlib.Get()
 
 	fmt.Printf("%+v\n", cust)
 }
