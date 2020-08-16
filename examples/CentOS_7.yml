@@ -10,7 +10,7 @@ kickstart:
       urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
 
 packer:
-  from: packer/vsphere.yml
+  from: packer/vSphere-RHEL.yml
   merge:
     builders:
       - guest_os_type: "centos7_64guest"

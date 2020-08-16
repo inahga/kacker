@@ -65,9 +65,9 @@ func (t *resolvedVariables) RequireArray(name string) []string {
 	return ret
 }
 
-func (v Variable) isValid() (bool, error) {
+func (v Variable) validate() error {
 	if len(v.Name) == 0 {
-		return false, fmt.Errorf("Variable name cannot be empty")
+		return fmt.Errorf("Variable name cannot be empty")
 	}
 	v.Name = ""
 
@@ -76,16 +76,16 @@ func (v Variable) isValid() (bool, error) {
 	for i := 0; i < ref.NumField(); i++ {
 		if ref.Field(i).Len() > 0 {
 			if filled {
-				return false, fmt.Errorf("Cannot specify more than one value for variable")
+				return fmt.Errorf("Cannot specify more than one value for variable")
 			}
 			filled = true
 		}
 	}
 
 	if !filled {
-		return false, fmt.Errorf("Must specify at least one value")
+		return fmt.Errorf("Must specify at least one value")
 	}
-	return true, nil
+	return nil
 }
 
 func resolveSlice(sl []string, fn func(string) (string, error)) ([]string, error) {
@@ -108,7 +108,7 @@ func resolveVariables(vars []Variable) (*resolvedVariables, error) {
 	ret.Variables = make(map[string]string)
 
 	for _, elem := range vars {
-		_, err := elem.isValid()
+		err := elem.validate()
 		if err != nil {
 			return nil, fmt.Errorf(resolveErrFmt, elem.Name, err.Error())
 		}
@@ -177,8 +177,7 @@ func (kc *KickstartCustomization) ResolveFile() (string, error) {
 		return "", err
 	}
 	if globalConf.VerboseLogging {
-		log.Println("Resulting kickstart file:")
-		log.Printf("%s\n", buf.String())
+		log.Printf("Resulting kickstart file %s:\n%s\n", f.Name(), buf.String())
 	}
 	f.WriteString(buf.String())
 

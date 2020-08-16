@@ -43,7 +43,6 @@ func resolveFragment(fragment string) (string, error) {
 func resolveURL(url string) (string, error) {
 	var resp *http.Response
 	var err error
-
 	if globalConf.UseInsecureSSL {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
@@ -53,7 +52,6 @@ func resolveURL(url string) (string, error) {
 	} else {
 		resp, err = http.Get(url)
 	}
-
 	if err != nil {
 		return "", err
 	}
