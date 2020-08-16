@@ -6,7 +6,7 @@ import (
 	"log"
 	"os"
 
-	kacker "gitlab.inahga.org/aghani/kacker/internal"
+	kacker "gitlab.inahga.org/aghani/kacker/pkg"
 
 	"gopkg.in/yaml.v3"
 )
@@ -16,15 +16,12 @@ import (
 // Merge customization and packer YAML, then convert to json and store as temporary file
 // Execute packer
 
-// Config stores the various paths needed for operation
-type Config struct {
-	CustomizationPath string `yaml:"customizationPath"`
-	FragmentsPath     string `yaml:"fragmentsPath"`
-	KickstartPath     string `yaml:"kickstartPath"`
-	PackerfilePath    string `yaml:"packerfilePath"`
-}
-
 func main() {
+	conf := &kacker.Configuration{
+		UseInsecureSSL: true,
+	}
+	kacker.UseConfiguration(conf)
+
 	f, err := ioutil.ReadFile(os.Args[1])
 	if err != nil {
 		log.Fatalln("Could not read customization file")
@@ -33,8 +30,12 @@ func main() {
 	var cust kacker.Customization
 	err = yaml.Unmarshal(f, &cust)
 	if err != nil {
-		log.Fatalln("Invalid customization file")
+		log.Fatalf("Invalid customization file: %s", err.Error())
 	}
 
-	fmt.Printf("%+v\n", cust)
+	file, err := cust.Kickstart.ResolveFile()
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(file)
 }

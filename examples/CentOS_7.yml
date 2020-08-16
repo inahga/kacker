@@ -1,16 +1,16 @@
 ---
 kickstart:
   from: 
-    - CentOS_7.cfg.tmpl
-    - CentOS_8.cfg.tmpl
+    - kickstart/CentOS_8.cfg.tmpl
+    - kickstart/CentOS_7.cfg.tmpl
   variables:
     - name: netinst_url
       value: http://bay.uchicago.edu/centos/7.8.2003/os/x86_64/
     - name: deploy_keys
-      url: https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani
+      urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
 
 packer:
-  from: vsphere.yml
+  from: packer/vsphere.yml
   merge:
     builders:
       - guest_os_type: "centos7_64guest"

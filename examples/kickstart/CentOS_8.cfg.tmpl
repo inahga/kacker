@@ -1,0 +1,59 @@
+{{ block "centos" . }}
+
+url --url="{{ .Require "netinst_url" }}"
+rootpw {{ .Optional "rootpw" "password" }}
+
+network --activate --ipv6=auto --bootproto=dhcp --device=ens192
+network --hostname={{ .Optional "hostname" "centos" }}
+
+{{ block "diskconf" . }}
+autopart --type=lvm --nohome
+bootloader --location=mbr --boot-drive=sda
+ignoredisk --only-use=sda
+clearpart --none --initlabel
+{{ end }}
+
+keyboard --vckeymap=us --xlayouts='us'
+eula --agreed
+firstboot --disable
+lang en_US.UTF-8
+timezone {{ .Optional "timezone" "America/Chicago" }} --utc --nontp
+
+{{ block "authconf" . }}
+authselect select minimal
+{{ end }}
+
+reboot
+
+{{ block "packages" . }}
+%packages
+@core
+perl
+{{ range index .Arrays "packages" }} 
+{{ . }}
+{{ end }}
+%end
+{{ end }}
+
+%post --log=/root/ks-post.log
+{{ block "userconf" . }}
+
+{{ $username := .Optional "username" "centos" }}
+useradd -m {{ $username }}
+usermod -aG wheel {{ $username }}
+mkdir -f '/home/{{ $username }}/.ssh'
+touch '/home/{{ $username }}/.ssh/authorized_keys'
+chown {{ $username }}:{{ $username }} '/home/{{ $username }}/.ssh/authorized_keys
+chmod 0600 {{ $username }}:{{ $username }} '/home/{{ $username }}/.ssh/authorized_keys
+{{ range index .Arrays "deploy_keys" }}
+echo $'{{ escape . }}' >> '/home/{{ $username }}/.ssh/authorized_keys'
+{{ end }}
+
+{{ end }}
+
+{{ range index .Arrays "scripts" }} 
+{{ . }}
+{{ end }}
+%end
+
+{{ end }}

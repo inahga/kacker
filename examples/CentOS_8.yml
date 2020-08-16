@@ -1,24 +1,17 @@
 ---
 kickstart:
-  from:
-    - CentOS_8_DataDisk.cfg.tmpl
-    - CentOS_8.cfg.tmpl
+  from: [kickstart/CentOS_8.cfg.tmpl]
   variables:
     - name: netinst_url
       value: http://bay.uchicago.edu/centos/8.2.2004/BaseOS/x86_64/os/
     - name: deploy_keys
-      url: https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani
+      urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
 
 packer:
-  from: vsphere.yml
+  from: packer/vsphere.yml
   merge:
     builders:
       - guest_os_type: "centos8_64guest"
-        storage:
-          - disk_size: "16384"
-            disk_thin_provisioned: "true"
-          - disk_size: "1048576"
-            disk_thin_provisioned: "true"
         iso_urls: "http://bay.uchicago.edu/centos/8.2.2004/isos/x86_64/CentOS-8.2.2004-x86_64-boot.iso"
         iso_checksum: "c67876a5602faa17f68b40ccf2628799b87454aa67700f0f57eec15c6ccdd98c"
-        vm_name: "CentOS_8_Storage"
+        vm_name: "CentOS_8_Latest"

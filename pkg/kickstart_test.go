@@ -46,7 +46,7 @@ func TestVariableIsValid(t *testing.T) {
 
 	for key, elem := range validVariables {
 		t.Run(key, func(t *testing.T) {
-			_, err := elem.IsValid()
+			_, err := elem.isValid()
 			if err != nil {
 				t.Errorf("%+v should be valid, got err %s", elem, err)
 			}
@@ -55,7 +55,7 @@ func TestVariableIsValid(t *testing.T) {
 
 	for key, elem := range invalidVariables {
 		t.Run(key, func(t *testing.T) {
-			_, err := elem.IsValid()
+			_, err := elem.isValid()
 			if err == nil {
 				t.Errorf("%+v should be invalid", elem)
 			}
