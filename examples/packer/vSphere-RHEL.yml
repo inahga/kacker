@@ -1,49 +1,38 @@
----
-sensitive-variables:
-  - "vsphere-password"
-
 builders:
-  - type: "vsphere-iso"
-    convert_to_template: "true"
-    vcenter_server: "vcsa0.vsphere.inahga.org"
-    username: "{{user `vsphere-user`}}"
-    password: "{{user `vsphere-password`}}"
-    insecure_connection: "true"
-
-    vm_name: "vSphere Template"
-    folder: "PackerTemplates"
-    host: "esxi2.vsphere.inahga.org"
-    datastore: "esxi2-Local"
-    network: "DPG-10-Public"
-
-    notes: "Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}"
-    guest_os_type: ""
-
-    ssh_username: "root"
-    ssh_password: "password"
-
-    CPUs: "2"
+  - CPUs: "2"
     RAM: "2048"
-
+    boot_command:
+      - <esc><wait>
+      - linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{env `KICKSTART`}}<enter>
+    convert_to_template: "true"
+    datastore: esxi2-Local
+    disk_controller_type: pvscsi
+    folder: PackerTemplates
+    guest_os_type: ""
+    host: esxi2.vsphere.inahga.org
+    http_directory: ./
+    insecure_connection: "true"
+    iso_checksum: ""
+    iso_urls: ""
+    network_adapters:
+      - network: DPG-10-Public
+        network_card: vmxnet3
+    notes: Built by Packer, created by {{user `vsphere-user`}} on {{isotime}}
+    password: '{{user `vsphere-password`}}'
+    ssh_password: password
+    ssh_username: root
     storage:
       - disk_size: "16384"
         disk_thin_provisioned: "true"
-    disk_controller_type: "pvscsi"
-
-    network_card: "vmxnet3"
-
-    iso_urls: ""
-    iso_checksum: ""
-
-    http_directory: "./"
-
-    boot_command:
-      - "<esc><wait>"
-      - "linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{env `KICKSTART`}}<enter>"
-
+    type: vsphere-iso
+    username: '{{user `vsphere-user`}}'
+    vcenter_server: vcsa0.vsphere.inahga.org
+    vm_name: vSphere Template
 provisioners:
-  - type: shell
-    inline:
+  - inline:
       - passwd -d root
       - usermod -L root
-      - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config 
+      - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
+    type: shell
+sensitive-variables:
+  - vsphere-password

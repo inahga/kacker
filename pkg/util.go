@@ -1,12 +1,14 @@
 package kacker
 
 import (
+	"bufio"
 	"crypto/tls"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 )
 
@@ -29,6 +31,42 @@ func hasCommand(cmd string) bool {
 		return false
 	}
 	return true
+}
+
+func readReadCloser(readCloser io.ReadCloser, f *os.File, c chan struct{}) {
+	scanner := bufio.NewScanner(readCloser)
+	for scanner.Scan() {
+		line := scanner.Text()
+		fmt.Fprintln(f, line)
+	}
+	c <- struct{}{}
+}
+
+func runCommands(commands []*exec.Cmd) error {
+	for _, command := range commands {
+		stdout, err := command.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		stderr, err := command.StderrPipe()
+		if err != nil {
+			return err
+		}
+
+		stdoutChan := make(chan struct{})
+		stderrChan := make(chan struct{})
+		go readReadCloser(stdout, os.Stdout, stdoutChan)
+		go readReadCloser(stderr, os.Stderr, stderrChan)
+		if err = command.Start(); err != nil {
+			return err
+		}
+		<-stdoutChan
+		<-stderrChan
+		if err = command.Wait(); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // HasPacker checks whether packer is installed on the system.
