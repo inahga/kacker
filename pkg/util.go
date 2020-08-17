@@ -3,10 +3,25 @@ package kacker
 import (
 	"crypto/tls"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"log"
 	"net/http"
 	"os/exec"
 )
+
+var globalConf Configuration
+
+// Configuration sets the behavior of this module.
+type Configuration struct {
+	VerboseLogging bool
+	UseInsecureSSL bool
+}
+
+// UseConfiguration sets the behavior of this module.
+func UseConfiguration(conf *Configuration) {
+	globalConf = *conf
+}
 
 func hasCommand(cmd string) bool {
 	ret := exec.Command(cmd)
@@ -62,4 +77,16 @@ func resolveURL(url string) (string, error) {
 		return "", err
 	}
 	return string(ret), nil
+}
+
+func resolveToTempFile(dir string, template string, resolve func(io.Writer) error) (string, error) {
+	f, err := ioutil.TempFile(dir, template)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+	if globalConf.VerboseLogging {
+		log.Printf("Writing to %s\n", f.Name())
+	}
+	return f.Name(), resolve(f)
 }

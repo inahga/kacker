@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 
@@ -32,32 +31,41 @@ func main() {
 	// 	log.Fatalf("Invalid customization file: %s", err.Error())
 	// }
 
-	// file, err := cust.Kickstart.ResolveFile()
+	// file, err := cust.Kickstart.ResolveTempFile()
 	// if err != nil {
 	// 	panic(err)
 	// }
 	// fmt.Println(file)
 
+	// err = cust.Kickstart.Resolve(os.Stdout)
+
 	// kacker.MergeProperties([]string{"test1.yml", "test2.yml"})
 	// kacker.ReadYamlFile("test1.yml")
+
 	var cust kacker.Customization
 	f, _ := ioutil.ReadFile(os.Args[1])
 	yaml.Unmarshal(f, &cust)
-	baseNodes, err := kacker.ReadYamlFile(cust.Packer.From)
+	err := cust.Packer.Resolve(os.Stdout)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(cust.Packer.From)
-	childNodes, _ := kacker.ReadYamlField(cust.Packer.Merge)
-	fmt.Printf("%v", baseNodes)
 
-	commands := kacker.GetMergeCommands(append(baseNodes, childNodes...))
-	for _, command := range commands {
-		fmt.Printf("%v\n", command)
-		fmt.Printf("%v\n", command.Value)
-		fmt.Println("")
-	}
-	// err = kacker.ExecuteMergeCommands(os.Args[1], os.Stdout, commands)
+	// baseNodes, err := kacker.ReadYamlFile(cust.Packer.From)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(cust.Packer.From)
+	// childNodes, _ := kacker.ReadYamlField(cust.Packer.Merge)
+	// fmt.Printf("%v", baseNodes)
+
+	// commands := kacker.GetMergeCommands(append(baseNodes, childNodes...))
+	// for _, command := range commands {
+	// 	fmt.Printf("%v\n", command)
+	// 	fmt.Printf("%v\n", command.Value)
+	// 	fmt.Println("")
+	// }
+
+	// err = kacker.UpdateDocument(cust.Packer.From, os.Stdout, commands)
 	// if err != nil {
 	// 	panic(err)
 	// }

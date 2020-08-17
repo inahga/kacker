@@ -3,7 +3,7 @@ package kacker
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"path"
 	"reflect"
@@ -22,9 +22,9 @@ type Variable struct {
 	Fragments []string `yaml:"fragments"`
 }
 
-// KickstartCustomization collects the kickstart template file and any variable
+// Kickstart collects the kickstart template file and any variable
 // substitutions.
-type KickstartCustomization struct {
+type Kickstart struct {
 	From      []string   `yaml:"from"`
 	Variables []Variable `yaml:"variables"`
 }
@@ -149,37 +149,32 @@ func resolveVariables(vars []Variable) (*resolvedVariables, error) {
 	return &ret, nil
 }
 
-// ResolveFile takes a customization and applies the given variables to the
-// given templates. The result is a complete kickstart file.
-func (kc *KickstartCustomization) ResolveFile() (string, error) {
+func (kc *Kickstart) ResolveTempFile() (string, error) {
+	return resolveToTempFile("./", "kacker-ks-*.cfg", kc.Resolve)
+}
+
+func (kc *Kickstart) Resolve(writer io.Writer) error {
 	funcMap := template.FuncMap{
 		"escape": escape,
 	}
 	basename := path.Base(kc.From[0])
 	temp, err := template.New(basename).Funcs(funcMap).ParseFiles(kc.From...)
 	if err != nil {
-		return "", err
+		return err
 	}
 
 	vars, err := resolveVariables(kc.Variables)
 	if err != nil {
-		return "", err
+		return err
 	}
-
-	f, err := ioutil.TempFile("./", "kacker-ks-*.cfg")
-	if err != nil {
-		return "", err
-	}
-	defer f.Close()
 
 	var buf bytes.Buffer
 	if err := temp.Execute(&buf, vars); err != nil {
-		return "", err
+		return err
 	}
 	if globalConf.VerboseLogging {
-		log.Printf("Resulting kickstart file %s:\n%s\n", f.Name(), buf.String())
+		log.Printf("Resulting kickstart file:\n%s\n", buf.String())
 	}
-	f.WriteString(buf.String())
-
-	return f.Name(), nil
+	_, err = writer.Write(buf.Bytes())
+	return err
 }

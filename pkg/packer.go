@@ -1,73 +1,102 @@
 package kacker
 
 import (
-	"fmt"
+	"bufio"
 	"io"
-	"io/ioutil"
 	"os"
 
 	"github.com/mikefarah/yq/v3/pkg/yqlib"
+	"gopkg.in/op/go-logging.v1"
 	"gopkg.in/yaml.v3"
 )
 
-// PackerCustomization collects the packer file and any YAML substitutions that
+// Packer collects the packer file and any YAML substitutions that
 // need to be made.
-type PackerCustomization struct {
+type Packer struct {
 	From  string      `yaml:"from"`
 	Merge interface{} `yaml:"merge"`
 }
 
 var yq = yqlib.NewYqLib()
 
-func (p *PackerCustomization) readPackerFile(name string) (interface{}, error) {
-	var ret interface{}
+func (p *Packer) Resolve(out io.Writer) error {
+	if !globalConf.VerboseLogging {
+		logging.SetLevel(logging.ERROR, "yq")
+	}
 
-	f, err := ioutil.ReadFile(name)
+	fileNodes, err := getNodeContextFromFile(p.From)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	if err = yaml.Unmarshal(f, &ret); err != nil {
-		return nil, err
+	fieldNodes, err := getNodeContextFromField(p.Merge)
+	if err != nil {
+		return err
 	}
-
-	return nil, nil
+	mergeCommands := getMergeCommands(append(fileNodes, fieldNodes...))
+	return yqlibUpdate(p.From, out, mergeCommands)
 }
 
-type readDataFn func(dataBucket *yaml.Node) ([]*yqlib.NodeContext, error)
-type yamlDecoderFn func(*yaml.Decoder) error
-type updateDataFn func(dataBucket *yaml.Node, currentIndex int) error
+func (p *Packer) ResolveTempFile() (string, error) {
+	return resolveToTempFile("./", "kacker-packer-*.yml", p.Resolve)
+}
 
-func ReadYamlFile(filename string) ([]*yqlib.NodeContext, error) {
+func getNodeContextFromFile(filename string) ([]*yqlib.NodeContext, error) {
 	var yqlibNodes []*yqlib.NodeContext
+	return yqlibNodes, decodeAndExecute(filename, func(node *yaml.Node) error {
+		yqlibNode, nodeErr := yq.Get(node, "**", true)
+		if nodeErr != nil {
+			return nodeErr
+		}
+		yqlibNodes = append(yqlibNodes, yqlibNode...)
+		return nil
+	})
+}
+
+func yqlibUpdate(filename string, out io.Writer, commands []yqlib.UpdateCommand) error {
+	writer := bufio.NewWriter(out)
+	defer writer.Flush()
+	encoder := yqlib.NewJsonEncoder(writer, true, 2)
+	return decodeAndExecute(filename, func(node *yaml.Node) error {
+		for _, update := range commands {
+			updateErr := yq.Update(node, update, true)
+			if updateErr != nil {
+				return updateErr
+			}
+		}
+		encodeErr := encoder.Encode(node)
+		if encodeErr != nil {
+			return encodeErr
+		}
+		return nil
+	})
+}
+
+func decodeAndExecute(filename string, fn func(*yaml.Node) error) error {
 	f, err := os.Open(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer f.Close()
-
 	decoder := yaml.NewDecoder(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for {
 		var yamlNode yaml.Node
 		decodeErr := decoder.Decode(&yamlNode)
 		if decodeErr == io.EOF {
-			return yqlibNodes, nil
+			return nil
 		} else if decodeErr != nil {
-			return nil, err
+			return decodeErr
 		}
-
-		yqlibNode, nodeErr := yq.Get(&yamlNode, "**", true)
-		if nodeErr != nil {
-			return nil, err
+		if fnErr := fn(&yamlNode); fnErr != nil {
+			return fnErr
 		}
-		yqlibNodes = append(yqlibNodes, yqlibNode...)
 	}
 }
 
-func ReadYamlField(field interface{}) ([]*yqlib.NodeContext, error) {
+func getNodeContextFromField(field interface{}) ([]*yqlib.NodeContext, error) {
 	var yamlNode yaml.Node
 	if err := yamlNode.Encode(field); err != nil {
 		return nil, err
@@ -75,7 +104,7 @@ func ReadYamlField(field interface{}) ([]*yqlib.NodeContext, error) {
 	return yq.Get(&yamlNode, "**", true)
 }
 
-func GetMergeCommands(nodes []*yqlib.NodeContext) []yqlib.UpdateCommand {
+func getMergeCommands(nodes []*yqlib.NodeContext) []yqlib.UpdateCommand {
 	var mergeCommands []yqlib.UpdateCommand = []yqlib.UpdateCommand{}
 	for _, node := range nodes {
 		mergePath := yq.MergePathStackToString(node.PathStack, false)
@@ -87,34 +116,4 @@ func GetMergeCommands(nodes []*yqlib.NodeContext) []yqlib.UpdateCommand {
 		})
 	}
 	return mergeCommands
-}
-
-func ExecuteMergeCommands(filename string, out io.Writer, commands []yqlib.UpdateCommand) error {
-	f, err := os.Open(filename)
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	decoder := yaml.NewDecoder(f)
-	encoder := yaml.NewEncoder(out)
-	defer encoder.Close()
-
-	index := 0
-	for {
-		var yamlNode yaml.Node
-		decodeErr := decoder.Decode(&yamlNode)
-		if decodeErr == io.EOF {
-			return nil
-		} else if decodeErr != nil {
-			return err
-		}
-
-		updateErr := yq.Update(&yamlNode, commands[index], false)
-		if updateErr != nil {
-			return nil
-		}
-
-		fmt.Printf("%s: %s\n", yamlNode.Tag, yamlNode.Value)
-	}
 }
