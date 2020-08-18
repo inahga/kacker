@@ -158,7 +158,12 @@ func (kc *Kickstart) Resolve(writer io.Writer) error {
 		"escape": escape,
 	}
 	basename := path.Base(kc.From[0])
-	temp, err := template.New(basename).Funcs(funcMap).ParseFiles(kc.From...)
+	temp := template.New(basename).Funcs(funcMap)
+
+	for index := range kc.From {
+		kc.From[index] = path.Join(globalConf.RelativeDir, kc.From[index])
+	}
+	temp, err := temp.ParseFiles(kc.From...)
 	if err != nil {
 		return err
 	}

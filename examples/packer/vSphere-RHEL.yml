@@ -3,7 +3,7 @@ builders:
     RAM: "2048"
     boot_command:
       - <esc><wait>
-      - linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{env `KICKSTART`}}<enter>
+      - linux ks=http://{{ .HTTPIP }}:{{ .HTTPPort }}/{{user `kickstart`}}<enter>
     convert_to_template: "true"
     datastore: esxi2-Local
     disk_controller_type: pvscsi
@@ -36,3 +36,5 @@ provisioners:
     type: shell
 sensitive-variables:
   - vsphere-password
+variables:
+  kickstart: "{{ env `KICKSTART` }}"

@@ -18,6 +18,8 @@ var globalConf Configuration
 type Configuration struct {
 	VerboseLogging bool
 	UseInsecureSSL bool
+	KeepTempFiles  bool
+	RelativeDir    string
 }
 
 // UseConfiguration sets the behavior of this module.
@@ -119,12 +121,28 @@ func resolveURL(url string) (string, error) {
 
 func resolveToTempFile(dir string, template string, resolve func(io.Writer) error) (string, error) {
 	f, err := ioutil.TempFile(dir, template)
+	ret := f.Name()
 	if err != nil {
 		return "", err
 	}
-	defer f.Close()
-	if globalConf.VerboseLogging {
-		log.Printf("Writing to %s\n", f.Name())
-	}
-	return f.Name(), resolve(f)
+
+	func() {
+		defer func() {
+			f.Close()
+			if r := recover(); r != nil && !globalConf.KeepTempFiles {
+				log.Println(r)
+				rmErr := os.Remove(ret)
+				if rmErr != nil {
+					log.Printf("Recovering: Could not delete temp file %s\n", ret)
+				}
+			}
+		}()
+		if globalConf.VerboseLogging {
+			log.Printf("Writing to %s\n", f.Name())
+		}
+		if err = resolve(f); err != nil {
+			panic(err)
+		}
+	}()
+	return ret, err
 }

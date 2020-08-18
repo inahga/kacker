@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"os"
+	"path"
 
 	"github.com/mikefarah/yq/v3/pkg/yqlib"
 	"gopkg.in/op/go-logging.v1"
@@ -20,11 +21,10 @@ type Packer struct {
 var yq = yqlib.NewYqLib()
 
 func (p *Packer) Resolve(out io.Writer) error {
-	if !globalConf.VerboseLogging {
-		logging.SetLevel(logging.ERROR, "yq")
-	}
+	logging.SetLevel(logging.ERROR, "yq")
 
-	fileNodes, err := getNodeContextFromFile(p.From)
+	from := path.Join(globalConf.RelativeDir, p.From)
+	fileNodes, err := getNodeContextFromFile(from)
 	if err != nil {
 		return err
 	}
@@ -33,7 +33,7 @@ func (p *Packer) Resolve(out io.Writer) error {
 		return err
 	}
 	mergeCommands := getMergeCommands(append(fileNodes, fieldNodes...))
-	return yqlibUpdate(p.From, out, mergeCommands)
+	return yqlibUpdate(from, out, mergeCommands)
 }
 
 func (p *Packer) ResolveTempFile() (string, error) {

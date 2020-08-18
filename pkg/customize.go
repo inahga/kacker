@@ -15,21 +15,29 @@ type Customization struct {
 	Packer    Packer    `yaml:"packer"`
 }
 
-func (c *Customization) Run() error {
+func (c *Customization) Run(packerFlags []string) error {
 	kickstart, err := c.Kickstart.ResolveTempFile()
 	if err != nil {
 		return err
 	}
 	os.Setenv("KICKSTART", kickstart)
+	if !globalConf.KeepTempFiles {
+		defer os.Remove(kickstart)
+	}
 
 	packer, err := c.Packer.ResolveTempFile()
 	if err != nil {
 		return err
 	}
+	if !globalConf.KeepTempFiles {
+		defer os.Remove(packer)
+	}
 
 	var commands []*exec.Cmd
-	commands = append(commands, exec.Command("packer", "validate", packer))
-	commands = append(commands, exec.Command("packer", "build", packer))
+	commands = append(commands, exec.Command("packer",
+		append(append([]string{"validate"}, packerFlags...), packer)...))
+	commands = append(commands, exec.Command("packer",
+		append(append([]string{"build"}, packerFlags...), packer)...))
 
 	if err = runCommands(commands); err != nil {
 		return err
@@ -37,7 +45,7 @@ func (c *Customization) Run() error {
 	return nil
 }
 
-func Run(filename string) error {
+func Run(filename string, packerFlags []string) error {
 	var cust Customization
 	f, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -46,5 +54,5 @@ func Run(filename string) error {
 	if err = yaml.Unmarshal(f, &cust); err != nil {
 		return err
 	}
-	return cust.Run()
+	return cust.Run(packerFlags)
 }
