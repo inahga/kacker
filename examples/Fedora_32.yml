@@ -1,0 +1,28 @@
+---
+kickstart:
+  from: [kickstart/CentOS_8.cfg.tmpl]
+  variables:
+    - name: netinst_url
+      value: https://mirrors.mit.edu/fedora/linux/releases/32/Everything/x86_64/os/
+    - name: deploy_keys
+      urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
+    - name: hostname
+      value: fedora
+    - name: username
+      value: fedora
+    - name: scripts
+      values:
+        - systemctl enable sshd
+        - echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
+  no_verify_ssl: true 
+  ksvalidator: RHEL8
+
+packer:
+  from: packer/vSphere-RHEL.yml
+  force: true
+  merge:
+    builders:
+      - guest_os_type: "fedora64guest"
+        iso_urls: "https://mirrors.mit.edu/fedora/linux/releases/32/Server/x86_64/iso/Fedora-Server-netinst-x86_64-32-1.6.iso"
+        iso_checksum: "7f4afd2a26c718f9f15e4bbfd9c2e8849f81036d2a82a4e81fa4a313a833da9c"
+        vm_name: "Packer_Fedora_32"
