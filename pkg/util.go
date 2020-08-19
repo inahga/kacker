@@ -29,14 +29,6 @@ func UseConfiguration(conf *Configuration) {
 	globalConf = *conf
 }
 
-func hasCommand(cmd string) bool {
-	ret := exec.Command(cmd)
-	if err := ret.Run(); err != nil {
-		return false
-	}
-	return true
-}
-
 func readReadCloser(readCloser io.ReadCloser, f *os.File, c chan struct{}) {
 	scanner := bufio.NewScanner(readCloser)
 	for scanner.Scan() {
@@ -47,13 +39,27 @@ func readReadCloser(readCloser io.ReadCloser, f *os.File, c chan struct{}) {
 }
 
 func runCommands(commands []*exec.Cmd) error {
+	var target *exec.Cmd
+
 	ch := make(chan os.Signal)
 	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(ch)
 
-	var target *exec.Cmd
+	done := make(chan struct{})
+	defer func() {
+		done <- struct{}{}
+	}()
+
 	go func() {
-		<-ch
-		target.Process.Signal(syscall.SIGTERM)
+		for {
+			select {
+			case <-ch:
+				log.Printf("Received ctrl-c signal, sending signal to child process")
+				target.Process.Signal(syscall.SIGTERM)
+			case <-done:
+				return
+			}
+		}
 	}()
 
 	for _, command := range commands {
@@ -84,15 +90,20 @@ func runCommands(commands []*exec.Cmd) error {
 	return nil
 }
 
-// HasPacker checks whether packer is installed on the system.
-func HasPacker() bool {
-	return hasCommand("packer")
+func quickRunCommand(cmd ...string) bool {
+	ret := exec.Command(cmd[0], cmd[1:]...)
+	if err := ret.Run(); err != nil {
+		return false
+	}
+	return true
 }
 
-// HasKsvalidator checks whether ksvalidator, as part of pykickstart, is
-// installed on the system.
+func HasPacker() bool {
+	return quickRunCommand("packer", "version")
+}
+
 func HasKsvalidator() bool {
-	return hasCommand("ksvalidator")
+	return quickRunCommand("ksvalidator", "-v")
 }
 
 func escape(str string) string {
