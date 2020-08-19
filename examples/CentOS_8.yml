@@ -7,6 +7,7 @@ kickstart:
     - name: deploy_keys
       urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
   no_verify_ssl: true 
+  ksvalidator: RHEL8
 
 packer:
   from: packer/vSphere-RHEL.yml

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"os/exec"
 	"path"
 	"reflect"
 	"text/template"
@@ -28,6 +29,10 @@ type Kickstart struct {
 	From        []string   `yaml:"from"`
 	Variables   []Variable `yaml:"variables"`
 	NoVerifySSL bool       `yaml:"no_verify_ssl"`
+
+	// Later, this should be refactored to support multiple validators, but right
+	// now, ksvalidator is the only one I can think of.
+	Ksvalidator string `yaml:"ksvalidator"`
 }
 
 type resolvedVariables struct {
@@ -184,4 +189,11 @@ func (kc *Kickstart) Resolve(writer io.Writer) error {
 	}
 	_, err = writer.Write(buf.Bytes())
 	return err
+}
+
+func (kc *Kickstart) RunKsvalidator(filename string) error {
+	// Use runCommands, as it is much more intelligent
+	return runCommands([]*exec.Cmd{
+		exec.Command("ksvalidator", "-v", kc.Ksvalidator, filename),
+	})
 }

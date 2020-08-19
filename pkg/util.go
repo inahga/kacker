@@ -103,7 +103,7 @@ func HasPacker() bool {
 }
 
 func HasKsvalidator() bool {
-	return quickRunCommand("ksvalidator", "-v")
+	return quickRunCommand("ksvalidator", "-h")
 }
 
 func escape(str string) string {

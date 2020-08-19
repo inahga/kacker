@@ -48,6 +48,13 @@ func (c *Customization) Run(packerFlags []string) error {
 	}
 
 	var commands []*exec.Cmd
+	if len(c.Kickstart.Ksvalidator) > 0 {
+		if !HasKsvalidator() {
+			return fmt.Errorf("ksvalidator is not installed or is not in your PATH")
+		}
+		commands = append(commands,
+			exec.Command("ksvalidator", "-v", c.Kickstart.Ksvalidator, kickstart))
+	}
 	commands = append(commands, exec.Command("packer",
 		append(append([]string{"validate"}, packerFlags...), packer)...))
 	if c.Packer.Force {
