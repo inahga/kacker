@@ -15,7 +15,7 @@ kickstart:
         - systemctl enable sshd
         - echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
   no_verify_ssl: true 
-  ksvalidator: RHEL8
+  ksvalidator: F32
 
 packer:
   from: packer/vSphere-RHEL.yml
