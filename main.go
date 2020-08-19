@@ -27,7 +27,7 @@ func main() {
 
 	conf := &kacker.Configuration{
 		VerboseLogging: *verbose,
-		UseInsecureSSL: *insecure,
+		NoVerifySSL:    *insecure,
 		KeepTempFiles:  *keepTemp,
 		RelativeDir:    path.Dir(absPath),
 	}

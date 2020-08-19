@@ -2,8 +2,11 @@ package kacker
 
 import (
 	"bufio"
+	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path"
 
 	"github.com/mikefarah/yq/v3/pkg/yqlib"
@@ -15,7 +18,63 @@ import (
 // need to be made.
 type Packer struct {
 	From  string      `yaml:"from"`
+	Force bool        `yaml:"force"`
 	Merge interface{} `yaml:"merge"`
+}
+
+// Customization represents the customization file: modifiers for the kickstart
+// file and the packer file.
+type Customization struct {
+	Kickstart Kickstart `yaml:"kickstart"`
+	Packer    Packer    `yaml:"packer"`
+}
+
+func (c *Customization) Run(packerFlags []string) error {
+	kickstart, err := c.Kickstart.ResolveTempFile()
+	if err != nil {
+		return err
+	}
+	os.Setenv("KICKSTART", kickstart)
+	if !globalConf.KeepTempFiles {
+		defer os.Remove(kickstart)
+	}
+
+	packer, err := c.Packer.ResolveTempFile()
+	if err != nil {
+		return err
+	}
+	if !globalConf.KeepTempFiles {
+		defer os.Remove(packer)
+	}
+
+	var commands []*exec.Cmd
+	commands = append(commands, exec.Command("packer",
+		append(append([]string{"validate"}, packerFlags...), packer)...))
+	if c.Packer.Force {
+		packerFlags = append(packerFlags, "-force")
+	}
+	commands = append(commands, exec.Command("packer",
+		append(append([]string{"build"}, packerFlags...), packer)...))
+
+	if err = runCommands(commands); err != nil {
+		return err
+	}
+	return nil
+}
+
+func Run(filename string, packerFlags []string) error {
+	if !HasPacker() {
+		return fmt.Errorf("Packer is not installed or is not in your PATH")
+	}
+	var cust Customization
+	f, err := ioutil.ReadFile(filename)
+	if err != nil {
+		return err
+	}
+	if err = yaml.Unmarshal(f, &cust); err != nil {
+		return err
+	}
+	return cust.Run(packerFlags)
 }
 
 var yq = yqlib.NewYqLib()
@@ -37,7 +96,7 @@ func (p *Packer) Resolve(out io.Writer) error {
 }
 
 func (p *Packer) ResolveTempFile() (string, error) {
-	return resolveToTempFile("./", "kacker-packer-*.yml", p.Resolve)
+	return resolveToTempFile("./", ".kacker-packer-*.yml", p.Resolve)
 }
 
 func getNodeContextFromFile(filename string) ([]*yqlib.NodeContext, error) {

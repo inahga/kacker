@@ -10,6 +10,8 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"os/signal"
+	"syscall"
 )
 
 var globalConf Configuration
@@ -17,7 +19,7 @@ var globalConf Configuration
 // Configuration sets the behavior of this module.
 type Configuration struct {
 	VerboseLogging bool
-	UseInsecureSSL bool
+	NoVerifySSL    bool
 	KeepTempFiles  bool
 	RelativeDir    string
 }
@@ -45,26 +47,37 @@ func readReadCloser(readCloser io.ReadCloser, f *os.File, c chan struct{}) {
 }
 
 func runCommands(commands []*exec.Cmd) error {
-	for _, command := range commands {
-		stdout, err := command.StdoutPipe()
-		if err != nil {
-			return err
-		}
-		stderr, err := command.StderrPipe()
-		if err != nil {
-			return err
-		}
+	ch := make(chan os.Signal)
+	signal.Notify(ch, os.Interrupt, syscall.SIGTERM)
 
+	var target *exec.Cmd
+	go func() {
+		<-ch
+		target.Process.Signal(syscall.SIGTERM)
+	}()
+
+	for _, command := range commands {
+		target = command
+
+		stdout, err := target.StdoutPipe()
+		if err != nil {
+			return err
+		}
+		stderr, err := target.StderrPipe()
+		if err != nil {
+			return err
+		}
 		stdoutChan := make(chan struct{})
 		stderrChan := make(chan struct{})
 		go readReadCloser(stdout, os.Stdout, stdoutChan)
 		go readReadCloser(stderr, os.Stderr, stderrChan)
-		if err = command.Start(); err != nil {
+
+		if err = target.Start(); err != nil {
 			return err
 		}
 		<-stdoutChan
 		<-stderrChan
-		if err = command.Wait(); err != nil {
+		if err = target.Wait(); err != nil {
 			return err
 		}
 	}
@@ -98,7 +111,7 @@ func resolveFragment(fragment string) (string, error) {
 func resolveURL(url string) (string, error) {
 	var resp *http.Response
 	var err error
-	if globalConf.UseInsecureSSL {
+	if globalConf.NoVerifySSL {
 		tr := &http.Transport{
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 		}
@@ -145,4 +158,13 @@ func resolveToTempFile(dir string, template string, resolve func(io.Writer) erro
 		}
 	}()
 	return ret, err
+}
+
+func stringSliceContains(arr []string, s string) bool {
+	for _, elem := range arr {
+		if elem == s {
+			return true
+		}
+	}
+	return false
 }

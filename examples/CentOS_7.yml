@@ -8,12 +8,15 @@ kickstart:
       value: http://bay.uchicago.edu/centos/7.8.2003/os/x86_64/
     - name: deploy_keys
       urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
+  no_verify_ssl: true
+  ksvalidator: RHEL7
 
 packer:
   from: packer/vSphere-RHEL.yml
+  force: true
   merge:
     builders:
       - guest_os_type: "centos7_64guest"
         iso_urls: "http://bay.uchicago.edu/centos/7.8.2003/isos/x86_64/CentOS-7-x86_64-NetInstall-2003.iso"
         iso_checksum: "101bc813d2af9ccf534d112cbe8670e6d900425b297d1a4d2529c5ad5f226372"
-        vm_name: "CentOS_7_Latest"
+        vm_name: "Packer_CentOS_7_Latest"

@@ -8,9 +8,11 @@ kickstart:
       value: http://bay.uchicago.edu/centos/8.2.2004/BaseOS/x86_64/os/
     - name: deploy_keys
       urls: [https://gitlab.inahga.org/infrastructure/ssh-public-keys/-/raw/master/aghani]
+  no_verify_ssl: true 
 
 packer:
   from: packer/vSphere-RHEL.yml
+  force: true
   merge:
     builders:
       - guest_os_type: "centos8_64guest"
@@ -21,4 +23,4 @@ packer:
             disk_thin_provisioned: "true"
         iso_urls: "http://bay.uchicago.edu/centos/8.2.2004/isos/x86_64/CentOS-8.2.2004-x86_64-boot.iso"
         iso_checksum: "c67876a5602faa17f68b40ccf2628799b87454aa67700f0f57eec15c6ccdd98c"
-        vm_name: "CentOS_8_Storage"
+        vm_name: "Packer_CentOS_8_Storage"

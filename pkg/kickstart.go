@@ -25,8 +25,9 @@ type Variable struct {
 // Kickstart collects the kickstart template file and any variable
 // substitutions.
 type Kickstart struct {
-	From      []string   `yaml:"from"`
-	Variables []Variable `yaml:"variables"`
+	From        []string   `yaml:"from"`
+	Variables   []Variable `yaml:"variables"`
+	NoVerifySSL bool       `yaml:"no_verify_ssl"`
 }
 
 type resolvedVariables struct {
@@ -150,10 +151,11 @@ func resolveVariables(vars []Variable) (*resolvedVariables, error) {
 }
 
 func (kc *Kickstart) ResolveTempFile() (string, error) {
-	return resolveToTempFile("./", "kacker-ks-*.cfg", kc.Resolve)
+	return resolveToTempFile("./", ".kacker-ks-*.cfg", kc.Resolve)
 }
 
 func (kc *Kickstart) Resolve(writer io.Writer) error {
+	globalConf.NoVerifySSL = kc.NoVerifySSL
 	funcMap := template.FuncMap{
 		"escape": escape,
 	}
