@@ -41,12 +41,13 @@ perl
 {{ $username := .Optional "username" "centos" }}
 useradd -m {{ $username }}
 usermod -aG wheel {{ $username }}
-mkdir -f '/home/{{ $username }}/.ssh'
+mkdir -p '/home/{{ $username }}/.ssh'
 touch '/home/{{ $username }}/.ssh/authorized_keys'
 chown {{ $username }}:{{ $username }} '/home/{{ $username }}/.ssh/authorized_keys
 chmod 0600 {{ $username }}:{{ $username }} '/home/{{ $username }}/.ssh/authorized_keys
 {{ range index .Arrays "deploy_keys" }}
 echo $'{{ escape . }}' >> '/home/{{ $username }}/.ssh/authorized_keys'
+echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 {{ end }}
 
 {{ end }}
