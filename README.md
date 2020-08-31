@@ -1,38 +1,49 @@
 # Kacker
-This project seeks to reduce the ridiculous amount of repetition when using Packer to build images. Right now, it's targeted towards resolving RHEL kickstart files, but should be extensible enough to handle other config types (even Windows unattend.xml).
+A wrapper for HashiCorp Packer that seeks to conquer the repetition in managing multiple Packer config files and Kickstart files. It's primarily targeted for using RHEL Kickstart files, but it should be extensible enough to be used on other provisioning scripts such as Windows' unattend.xml or Debian preseed files.
 
+## Customization
+The key file for running Kacker is the Customization file. It resolves templated kickstart files and packer files, and runs Packer against them.
 
-### Old documentation 
-Using this repo involves the following command:
+To run a customization:
+```
+kacker customization.yaml
+```
+
+To supply flags to Packer, such as a secret variable file:
+```
+kacker -packer-flags='-var-file=secrets.json' customization.yaml
+```
+
+See `examples/` for examples of customization files and templated kickstart files.
+
+## Kickstart Templating
+The `kickstart` section of the customization provides a hierarchy of templated kickstart files, and supplies variables to them.
 
 ```
-make TARGET=<packerfile> KICKSTART=<kickstart file> OVERRIDE=<override args> <command>
+kickstart:
+  from:
+    - kickstart_parent.cfg.tmpl
+    - kickstart_child.cfg.tmpl
+  variables:
+    - name: var1
+      value: var1
+    - name: var2
+      values: [array, of, values]
 ```
-where `<packerfile>` is the packerfile in YAML format. It will automatically be converted to JSON.
 
-where `<kickstart>` is the name of the kickstart file, relative to the `http` directory. This is not always required, it depends on the target packerfile. Windows will use the same directive, despite it being called an unattend/answer file.
+Variables can be of type `value`, `values`, `url`, `urls`, `fragment`, and `fragments`. The array variable types map to arrays in the template file. Non-array variable types map to single variables.
 
-where `<override args>` is a list of arguments to pass directly to Packer. This entire directive can be omitted, if not needed.
+`url` and `urls` issue a GET request to the supplied URL and store the results in a variable or array, respectively. This is useful for grabbing plain text documents that exist over the internet. No assumptions about whitespace are made. No concatenation occurs.
 
-where `<command>` is one of the following:
- - "echo": print the contents of the packerfile to STDOUT in JSON format.
- - "validate": corresponds to `packer validate`
- - "build": corresponds to `packer build`
- - "debug": corresponds to `packer build -debug`
+`fragment` and `fragments` pull files from the file system into a variable or array, respectively. This is good for supplying several scripts to the kickstart file.
 
-Example commands:
- - `make TARGET=CentOS_8.1.yml KICKSTART=CentOS_8.1_ks.cfg OVERRIDE='-var "CPUs=4" -var "RAM=4096"' build`
- - `make TARGET=CentOS_8.1.yml KICKSTART=CentOS_8.1_ks.cfg validate`
+## Packer Config Files
+Packer already uses the Go template engine for its own means. Rather than muddy the waters by running our own template engine, overriding of values is accomplished through YAML merging.
 
-You must have `packer` in your `$PATH` and Python 3 installed.
-
-You should rename `secrets.json.template` to `secrets.json` and populate it with info.
-
-### HTTP Server
-Some Linux distros have removed floppy disk support (e.g. CentOS/RHEL 8). The workaround is to use the Packer local HTTP server. This will require you to open ports on your local machine's firewall (applicable for RHEL distros--Ubuntu firewall is off by default).
-
-You can turn the firewall off with `sudo systemctl stop firewalld`, or open a port range with `sudo firewall-cmd --zone=public --add-port=8000-9000/tcp`.
-
-
-### Kickstart Files
-To validate kickstart files, install `pykickstart` and use the `ksvalidator` command.
+## Todo
+- Multiple customizations in a single file with parallel execution.
+- Enhanced image lifecycle management.
+    - Packer will delete images before creating a new one, at least for vSphere. Could interrupt other builds that rely on an image.
+- Add other YAML merge/override strategies.
+- Enhance docs.
+- Get unit test coverage >70%
