@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"os"
 	"path"
 	"path/filepath"
 	"strings"
@@ -17,7 +18,8 @@ func main() {
 	flag.Parse()
 
 	if len(flag.Args()) == 0 {
-		panic(flag.ErrHelp)
+		flag.Usage()
+		os.Exit(1)
 	}
 	filename := flag.Args()[0]
 	absPath, err := filepath.Abs(filename)
