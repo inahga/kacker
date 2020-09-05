@@ -10,6 +10,10 @@ kickstart:
       value: fedora
     - name: username
       value: fedora
+    - name: scripts
+      values:
+        - systemctl enable sshd
+        - echo 'PermitRootLogin yes' >> /etc/ssh/sshd_config
   no_verify_ssl: true 
   ksvalidator: F32
 

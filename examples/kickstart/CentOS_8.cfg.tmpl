@@ -50,23 +50,6 @@ echo $'{{ escape . }}' >> '/home/{{ $username }}/.ssh/authorized_keys'
 echo '%wheel ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 {{ end }}
 
-{{ if .Optional "sshd_config" "" }}
-tee /etc/ssh/sshd_config < $'{{ escape . }}'
-{{ else }}
-tee /etc/ssh/sshd_config << EOF
-Include /etc/ssh/sshd_config.d/*.conf
-PermitRootLogin no 
-MaxAuthTries 3
-PubkeyAuthentication yes
-AuthorizedKeysFile	.ssh/authorized_keys
-PasswordAuthentication no
-ClientAliveInterval 1200 
-ClientAliveCountMax 3
-Subsystem sftp /usr/libexec/openssh/sftp-server
-EOF
-{{ end }}
-
-systemctl enable sshd
 {{ end }}
 
 {{ range index .Arrays "scripts" }} 
