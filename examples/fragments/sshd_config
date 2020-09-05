@@ -1,0 +1,10 @@
+SyslogFacility AUTHPRIV
+PrintMotd yes
+PermitRootLogin no 
+MaxAuthTries 3
+PubkeyAuthentication yes
+AuthorizedKeysFile	.ssh/authorized_keys
+PasswordAuthentication no
+ClientAliveInterval 1200 
+ClientAliveCountMax 3
+Subsystem sftp /usr/libexec/openssh/sftp-server

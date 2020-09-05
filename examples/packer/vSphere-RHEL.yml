@@ -29,11 +29,13 @@ builders:
     vcenter_server: vcsa0.vsphere.inahga.org
     vm_name: vSphere Template
 provisioners:
-  - inline:
+  - type: shell
+    inline:
       - passwd -d root
       - usermod -L root
-      - sed -i 's/PermitRootLogin yes/PermitRootLogin no/' /etc/ssh/sshd_config
-    type: shell
+  - type: file
+    source: "fragments/sshd_config"
+    destination: "/etc/ssh/sshd_config"
 sensitive-variables:
   - vsphere-password
 variables:
