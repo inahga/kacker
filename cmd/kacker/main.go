@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	kacker "gitlab.inahga.org/aghani/kacker/pkg"
+	"gitlab.inahga.org/aghani/inahgo/pkg/kacker"
 )
 
 func main() {
